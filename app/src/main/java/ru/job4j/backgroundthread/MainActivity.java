@@ -13,6 +13,7 @@ import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.net.URL;
 
 public class MainActivity extends AppCompatActivity {
@@ -41,7 +42,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void loadImage(View view){
-        mLoadImage = new ImageRunnable("https://2ch.hk/b/arch/2020-05-03/src/219280082/15884658224810.png");
+        mLoadImage = new ImageRunnable(this,
+                "https://2ch.hk/b/arch/2020-05-03/src/219280082/15884658224810.png");
     }
 
     class TestRunnable implements Runnable {
@@ -76,20 +78,26 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    class ImageRunnable implements Runnable {
+    static class ImageRunnable implements Runnable {
+        private WeakReference<MainActivity> mActivityWeakReference;
         Thread t;
         private String url;
 
-        public ImageRunnable(String url) {
+        public ImageRunnable(MainActivity activity, String url) {
             this.url = url;
-            t = new Thread(this);
-            t.start();
+            this.mActivityWeakReference = new WeakReference<>(activity);
+            this.t = new Thread(this);
+            this.t.start();
         }
 
         @Override
         public void run() {
+            MainActivity activity = mActivityWeakReference.get();
+            if(activity == null || activity.isFinishing()) {
+                return;
+            }
             Bitmap bitmap = loadImageFromNetwork(url);
-            runOnUiThread(() -> mImage.setImageBitmap(bitmap));
+            activity.mImage.post(() -> activity.mImage.setImageBitmap(bitmap));
         }
 
         private Bitmap loadImageFromNetwork(String url) {
