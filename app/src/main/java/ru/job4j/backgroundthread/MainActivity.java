@@ -73,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        synchronized void stopThread() {
+        public void stopThread() {
             stopFlag = true;
         }
     }
